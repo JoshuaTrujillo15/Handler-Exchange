@@ -1,0 +1,30 @@
+.footer {
+    background: #202020;
+    padding: 16px 8px;
+    color: #fff;
+    min-height: 300px;
+}
+
+.footer-title {
+    border-bottom: 2px solid #fff;
+    padding: 12px 0;
+}
+
+.footer-ul {
+    list-style: none;
+}
+
+.footer-li {
+    padding: 8px 0;
+}
+
+.footer-link {
+    padding: 0 8px;
+    color: #0a84ff;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-link:hover {
+    color: #57ABFF;
+}

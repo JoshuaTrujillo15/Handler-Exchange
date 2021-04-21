@@ -1,0 +1,30 @@
+.contract {
+    width: 100%;
+    max-width: 750px;
+    height: 400px;
+    box-sizing: border-box;
+    padding: 8px;
+    margin: 4px;
+    border: 1px solid #ddd;
+    display: flex;
+    flex-direction: column;
+    border-radius: 4px;
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.contract:hover {
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+    transform: translateY(-2px);
+}
+
+.contract-details {
+    flex: 1;
+    line-height: 2em;
+}
+
+
+@media (min-width: 1200px) {
+    .contract {
+        width: calc((100% / 3) - 8px);
+    }
+}
