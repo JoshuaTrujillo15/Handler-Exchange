@@ -4,11 +4,12 @@ import Contract from './components/Contract'
 import '../styles/Market.css'
 
 const mockData = {
+    id: '0x12345678',
     personalName: 'Joshua Trujillo',
     personalTitle: 'Lead Designer',
     businessName: 'Byte-Speak',
-    phoneNumber: '555 555 5555',
-    address: '42 Ethereum Avenue, TN, USA',
+    emailAddress: 'example@example.com',
+    address: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
     price: 1,
     priceDenomination: 'ETH',
     service: 'Build a React Web Application'

@@ -17,7 +17,7 @@
     transform: translateY(-2px);
 }
 
-.contract-details {
+.contract-info {
     flex: 1;
     line-height: 2em;
 }

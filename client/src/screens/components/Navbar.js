@@ -1,6 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import Logo from '../../assets/logo.svg'
+import Profile from '../../assets/profile.svg'
+import Swap from '../../assets/swap.svg'
 
 import '../../styles/components/Navbar.css'
 
@@ -13,7 +15,16 @@ const Navbar = () => {
             </Link>
             <ul className='navbar-ul'>
                 <li>
-                    <Link to='/profile' className='navbar-link'>Profile</Link>
+                    <Link to='/handlers' className='navbar-link'>
+                        <img src={Swap} alt='Handlers' className='navbar-icon' />
+                        <p className='navbar-link-text'>Handlers</p>
+                    </Link>
+                </li>
+                <li>
+                    <Link to='/profile' className='navbar-link'>
+                        <img src={Profile} alt='Profile' className='navbar-icon' />
+                        Profile
+                    </Link>
                 </li>
             </ul>
         </header>

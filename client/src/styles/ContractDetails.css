@@ -1,0 +1,35 @@
+.contract-details-container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 48px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.contract-details {
+    width: 75%;
+    min-width: 350px;
+    max-width: 750px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 2px 2px 2px rgba(0,0,0,0.2);
+    word-wrap: break-word;
+}
+
+.contract-details-header {
+    padding-bottom: 8px;
+    border-bottom: 2px solid #888;
+}
+
+.contract-details-subheader {
+    border-bottom: 2px solid #ddd;
+    padding: 16px 0 8px;
+}
+
+.contract-details-group {
+    padding: 8px 0;
+    line-height: 1.6em;
+}

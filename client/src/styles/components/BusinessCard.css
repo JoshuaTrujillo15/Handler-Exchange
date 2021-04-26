@@ -36,10 +36,40 @@
     padding: 8px;
 }
 
+.business-card-group.address {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
 .business-card-info {
-    border-bottom: 2px solid #0a84ff;
+    text-decoration: underline solid #0a84ff 2px;
+    line-height: 2em;
+    flex: 1;
+    text-align: center;
 }
 
 .business-card-content {
     flex: 1;
+}
+
+.clipboard-mini {
+    width: 16px;
+}
+
+.business-card-copy-message {
+    flex: 1;
+    text-align: center;
+}
+
+.business-card-copy {
+    border-radius: 4px;
+    padding: 4px;
+    box-sizing: border-box;
+    border: 1px solid rgba(0,0,0,0);
+    transition: border 0.2s;
+}
+
+.business-card-copy:hover {
+    border: 1px solid #fff;
 }

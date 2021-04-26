@@ -5,22 +5,19 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 0 12px #000;
-    z-index: 1;
+    box-shadow: 0 0 8px #000;
+    z-index: 2;
+    background: #0a84ff;
 }
 
 .navbar-brand {
     font-size: 1.6em;
     text-decoration: none;
-    color: #0a84ff;
+    color: #fff;
     transition: color 0.2s;
     display: flex;
     justify-content: center;
     word-wrap: none;
-}
-
-.navbar-brand:hover {
-    color: #57ABFF;
 }
 
 .navbar-brand:hover .navbar-logo {
@@ -39,12 +36,19 @@
 }
 
 .navbar-link {
-    color: #0a84ff;
+    color: #fff;
     text-decoration: none;
-    transition: color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.8em;
+}
+
+.navbar-icon {
+    width: 32px;
     padding: 4px 16px;
 }
 
-.navbar-link:hover {
-    color: #57ABFF;
+.navbar-icon:hover, .navbar-brand:hover {
+    opacity: 0.8;
 }
