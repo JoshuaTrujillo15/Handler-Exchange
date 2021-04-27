@@ -1,28 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-interface IERC1620 {
+interface ITokenStream {
 
     struct Stream {
         address sender;
         address recipient;
         address tokenAddress;
-        uint256 balance;
-        uint256 start;
-        uint256 stop;
+        uint256 startBlock;
+        uint256 stopBlock;
         uint256 payment;
-        uint256 interval;
+        uint256 balance;
+        uint256 withdrawn;
     }
 
-    event LogCreate(
+    event LogCreateStream(
         uint256 indexed _streamId,
         address indexed _sender,
         address indexed _recipient,
         address _tokenAddress,
         uint256 _startBlock,
         uint256 _stopBlock,
-        uint256 _payment,
-        uint256 _interval
+        uint256 _payment
     );
 
     event LogWithdraw(
@@ -31,49 +30,49 @@ interface IERC1620 {
         uint256 _funds
     );
 
-    event LogRedeem(
+    /*
+    event LogInitiateChange(
         uint256 indexed _streamId,
         address indexed _sender,
         address indexed _recipient,
-        uint256 _senderBalance,
-        uint256 _recipientBalance
-    );
-
-    event LogConfirmUpdate(
-        uint256 indexed _streamId,
-        address indexed _confirmer,
         address _newTokenAddress,
         uint256 _newStopBlock,
-        uint256 _newPayment,
-        uint256 _newInterval
+        uint256 _newPayment
     );
 
-    event LogRevokeUpdate(
+    event LogDenyChange(
         uint256 indexed _streamId,
         address indexed _revoker,
         address _newTokenAddress,
         uint256 _newStopBlock,
-        uint256 _newPayment,
-        uint256 _newInterval
+        uint256 _newPayment
     );
 
-    event LogExecuteUpdate(
+    event LogConfirmChange(
         uint256 indexed _streamId,
-        address indexed _sender,
-        address indexed _recipient,
+        address indexed _confirmer,
         address _newTokenAddress,
         uint256 _newStopBlock,
-        uint256 _newPayment,
-        uint256 _newInterval
+        uint256 _newPayment
     );
+    */
 
     function balanceOf(
         uint256 _streamId,
         address _addr
     )
         external
-        view
         returns (uint256);
+
+    function createStream(
+        address _recipient,
+        address _tokenAddress,
+        uint256 _startBlock,
+        uint256 _stopBlock,
+        uint256 _payment
+    )
+        external
+        returns (bool success);
 
     function getStream(
         uint256 _streamId
@@ -84,42 +83,32 @@ interface IERC1620 {
             address sender,
             address recipient,
             address tokenAddress,
-            uint256 balance,
             uint256 startBlock,
             uint256 stopBlock,
             uint256 payment,
-            uint256 interval
+            uint256 balance,
+            uint256 withdrawn
         );
 
-    function create(
-        address _recipient,
-        address _tokenAddress,
-        uint256 _startBlock,
-        uint256 _stopBlock,
-        uint256 _payment,
-        uint256 _interval
-    )
-        external;
+    function withdraw(uint256 _streamId, uint256 _funds) external returns (bool);
 
-    function withdraw(uint256 _streamId, uint256 _funds) external;
+    function cancel(uint256 _streamId) external returns (bool);
 
-    function redeem(uint256 _streamId) external;
-
-    function update(
+    /*
+    function initiateChange(
         uint256 _streamId,
         address _tokenAddress,
         uint256 _stopBlock,
-        uint256 _payment,
-        uint256 interval
+        uint256 _payment
     )
         external;
 
-    function confirmUpdate(
+    function responseChange(
         uint256 _streamId,
         address _tokenAddress,
         uint256 _stopBlock,
-        uint256 _payment,
-        uint256 _interval
+        uint256 _payment
     )
         external;
+    */
 }

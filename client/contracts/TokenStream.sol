@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 
-import "./interfaces/IERC1620.sol";
+import "./interfaces/ITokenStream.sol";
+import "./HandlerXToken.sol";
 
-abstract contract ERC1620 is IERC1620 {
+contract TokenStream is ITokenStream {
 
-    mapping(address => uint256) balances;
     Stream[] streamDatabase;
-    address handlerToken;
+    HandlerXToken handlerXToken = new HandlerXToken("Handler X Token", "HXT");
+    address handlerXTokenAddress;
 
     modifier streamActive(uint256 _streamId) {
         require(streamDatabase.length > _streamId, "inactive stream");
@@ -23,19 +24,23 @@ abstract contract ERC1620 is IERC1620 {
         _;
     }
 
-    constructor() { }
+    constructor() ITokenStream() { }
 
-    function balaceOf(
+    function balanceOf(
         uint256 _streamId,
         address _addr
     ) 
         public
+        override
         streamActive(_streamId)
         validParticipant(_streamId, _addr)
         returns (uint256)
     {
-        snapshot(_streamId);
+
+        _updateBalance(_streamId);
+
         Stream memory stream = streamDatabase[_streamId];
+
         if (stream.sender == _addr) {
             return stream.payment - stream.balance;
         } else {
@@ -50,41 +55,42 @@ abstract contract ERC1620 is IERC1620 {
         view
         override
         streamActive(_streamId)
-        returns (
+        returns 
+    (
         address sender,
         address recipient,
         address tokenAddress,
-        uint256 balance,
         uint256 startBlock,
         uint256 stopBlock,
         uint256 payment,
-        uint256 interval
+        uint256 balance,
+        uint256 withdrawn
     )
     {
         return (
             streamDatabase[_streamId].sender,
             streamDatabase[_streamId].recipient,
             streamDatabase[_streamId].tokenAddress,
-            streamDatabase[_streamId].balance,
-            streamDatabase[_streamId].start,
-            streamDatabase[_streamId].stop,
+            streamDatabase[_streamId].startBlock,
+            streamDatabase[_streamId].stopBlock,
             streamDatabase[_streamId].payment,
-            streamDatabase[_streamId].interval
+            streamDatabase[_streamId].balance,
+            streamDatabase[_streamId].withdrawn
         );
     }
 
-    function create(
+    function createStream(
         address _recipient,
         address _tokenAddress,
         uint256 _startBlock,
         uint256 _stopBlock,
-        uint256 _payment,
-        uint256 _interval
+        uint256 _payment
     )
         public
         override
+        returns (bool)
     {
-        require(_tokenAddress == handlerToken, "incompatible token");
+        require(_tokenAddress == handlerXTokenAddress, "incompatible token");
         require(_recipient != address(0x00), "recipient is a zero address");
         require(_recipient != address(this), "recipient is this contract");
         require(_recipient != msg.sender, "recipient is the sender");
@@ -94,35 +100,35 @@ abstract contract ERC1620 is IERC1620 {
             "startBlock must be a future block"
         );
         require(_stopBlock > _startBlock, "stopBlock must be after startBlock");
-        require(_interval > 0, "interval must be greater than 0");
         require(
-            (_stopBlock - _startBlock) % _interval == 0, 
-            "interval must be divisible by the number of blocks");
+            handlerXToken.approve(msg.sender, _payment) == true,
+            "erc20.approve() failed"
+        );
 
         Stream memory stream;
 
         stream.sender = msg.sender;
         stream.recipient = _recipient;
         stream.tokenAddress = _tokenAddress;
-        stream.balance = 0;
-        stream.start = _startBlock;
-        stream.stop = _stopBlock;
+        stream.startBlock = _startBlock;
+        stream.stopBlock = _stopBlock;
         stream.payment = _payment;
-        stream.interval = _interval;
+        stream.balance = 0;
+        stream.withdrawn = 0;
 
-        emit LogCreate(
-            streamDatabase.length,
+        streamDatabase.push(stream);
+
+        emit LogCreateStream(
+            streamDatabase.length - 1,
             msg.sender,
             _recipient,
             _tokenAddress,
             _startBlock,
             _stopBlock,
-            _payment,
-            _interval
+            _payment
         );
 
-        streamDatabase.push(stream);
-
+        return true;
     }
 
     function withdraw(
@@ -132,25 +138,53 @@ abstract contract ERC1620 is IERC1620 {
         public
         override
         streamActive(_streamId)
+        returns (bool)
     {
+        _updateBalance(_streamId);
+
         require(
             msg.sender == streamDatabase[_streamId].recipient, 
             "must be recipient"
         );
-        // Snapshot issues ?
+        require(
+            streamDatabase[_streamId].balance >= _funds,
+            "insufficient balance"
+        );
+        require(
+            handlerXToken.transferFrom(
+                streamDatabase[_streamId].sender,
+                msg.sender,
+                _funds
+            ) == true,
+            "erc20.transferFrom() failed"
+        );
+
+        streamDatabase[_streamId].withdrawn += _funds;
+        emit LogWithdraw(_streamId, msg.sender, _funds);
+        return true;
     }
 
-    function snapshot(uint256 _streamId) private {
+    function cancel(
+        uint256 _streamId
+    )
+        public
+        override
+        validParticipant(_streamId, msg.sender)
+        returns (bool) 
+    {
+
+    }
+
+    function _updateBalance(uint256 _streamId) private {
 
         Stream memory stream = streamDatabase[_streamId];
-        if (block.number <= stream.start || block.number >= stream.stop) {
-            return;
+        if (block.number <= stream.startBlock) return;
+        else if (block.number >= stream.stopBlock) {
+            stream.balance = stream.payment - stream.withdrawn;
         }
-        uint256 totalBlocks = stream.stop - stream.start;
-        uint256 intervalValue = stream.payment / (totalBlocks / stream.interval);
-        uint256 intervalsPassed = (block.number - stream.start) / stream.interval;
-
-        streamDatabase[_streamId].balance = intervalValue * intervalsPassed;
+        uint256 blockValue = stream.payment / (stream.stopBlock - stream.startBlock);
+        uint256 blocksPassed = block.number - stream.startBlock;
+        streamDatabase[_streamId].balance = (blocksPassed * blockValue) - stream.withdrawn;
     }
 
 }
