@@ -4,11 +4,16 @@ pragma solidity ^0.8.4;
 import "./interfaces/ITokenStream.sol";
 import "./HandlerXToken.sol";
 
+/// @title Implementation of ITokenStream Interface
+/// @author JoshuaTrujillo15
+/// @dev `tokenAddress` is commented out until full ERC20 compatibility is complete
+/// @dev This ONLY updates balance on query for now
+
 contract TokenStream is ITokenStream {
 
     Stream[] streamDatabase;
     HandlerXToken handlerXToken = new HandlerXToken("Handler X Token", "HXT");
-    address handlerXTokenAddress;
+    // address handlerXTokenAddress;
 
     modifier streamActive(uint256 _streamId) {
         require(streamDatabase.length > _streamId, "inactive stream");
@@ -29,7 +34,7 @@ contract TokenStream is ITokenStream {
     function balanceOf(
         uint256 _streamId,
         address _addr
-    ) 
+    )
         public
         override
         streamActive(_streamId)
@@ -37,7 +42,7 @@ contract TokenStream is ITokenStream {
         returns (uint256)
     {
 
-        _updateBalance(_streamId);
+        updateBalance(_streamId);
 
         Stream memory stream = streamDatabase[_streamId];
 
@@ -48,40 +53,9 @@ contract TokenStream is ITokenStream {
         }
     }
 
-    function getStream(
-        uint256 _streamId
-    )
-        public
-        view
-        override
-        streamActive(_streamId)
-        returns 
-    (
-        address sender,
-        address recipient,
-        address tokenAddress,
-        uint256 startBlock,
-        uint256 stopBlock,
-        uint256 payment,
-        uint256 balance,
-        uint256 withdrawn
-    )
-    {
-        return (
-            streamDatabase[_streamId].sender,
-            streamDatabase[_streamId].recipient,
-            streamDatabase[_streamId].tokenAddress,
-            streamDatabase[_streamId].startBlock,
-            streamDatabase[_streamId].stopBlock,
-            streamDatabase[_streamId].payment,
-            streamDatabase[_streamId].balance,
-            streamDatabase[_streamId].withdrawn
-        );
-    }
-
     function createStream(
         address _recipient,
-        address _tokenAddress,
+        // address _tokenAddress,
         uint256 _startBlock,
         uint256 _stopBlock,
         uint256 _payment
@@ -90,7 +64,7 @@ contract TokenStream is ITokenStream {
         override
         returns (bool)
     {
-        require(_tokenAddress == handlerXTokenAddress, "incompatible token");
+        // require(_tokenAddress == handlerXTokenAddress, "incompatible token");
         require(_recipient != address(0x00), "recipient is a zero address");
         require(_recipient != address(this), "recipient is this contract");
         require(_recipient != msg.sender, "recipient is the sender");
@@ -109,7 +83,7 @@ contract TokenStream is ITokenStream {
 
         stream.sender = msg.sender;
         stream.recipient = _recipient;
-        stream.tokenAddress = _tokenAddress;
+        // stream.tokenAddress = _tokenAddress;
         stream.startBlock = _startBlock;
         stream.stopBlock = _stopBlock;
         stream.payment = _payment;
@@ -122,13 +96,97 @@ contract TokenStream is ITokenStream {
             streamDatabase.length - 1,
             msg.sender,
             _recipient,
-            _tokenAddress,
+            // _tokenAddress,
             _startBlock,
             _stopBlock,
             _payment
         );
 
         return true;
+    }
+
+    function createStreamFrom(
+        address _sender,
+        address _recipient,
+        // address _tokenAddress,
+        uint256 _startBlock,
+        uint256 _stopBlock,
+        uint256 _payment
+    )
+        public
+        override
+        returns (bool)
+    {
+        // require(_tokenAddress == handlerXTokenAddress, "incompatible token");
+        require(_recipient != address(0x00), "recipient is a zero address");
+        require(_recipient != address(this), "recipient is this contract");
+        require(_recipient != _sender, "recipient is the sender");
+        require(_payment > 0, "payment cannot be zero");
+        require(
+            _startBlock >= block.number,
+            "startBlock must be a future block"
+        );
+        require(_stopBlock > _startBlock, "stopBlock must be after startBlock");
+        require(
+            handlerXToken.approve(_sender, _payment) == true,
+            "erc20.approve() failed"
+        );
+
+        Stream memory stream;
+
+        stream.sender = _sender;
+        stream.recipient = _recipient;
+        // stream.tokenAddress = _tokenAddress;
+        stream.startBlock = _startBlock;
+        stream.stopBlock = _stopBlock;
+        stream.payment = _payment;
+        stream.balance = 0;
+        stream.withdrawn = 0;
+
+        streamDatabase.push(stream);
+
+        emit LogCreateStream(
+            streamDatabase.length -1,
+            _sender,
+            _recipient,
+            // _tokenAddress,
+            _startBlock,
+            _stopBlock,
+            _payment
+        );
+
+        return true;
+    }
+
+    function getStream(
+        uint256 _streamId
+    )
+        public
+        view
+        override
+        streamActive(_streamId)
+        returns 
+    (
+        address sender,
+        address recipient,
+        // address tokenAddress,
+        uint256 startBlock,
+        uint256 stopBlock,
+        uint256 payment,
+        uint256 balance,
+        uint256 withdrawn
+    )
+    {
+        return (
+            streamDatabase[_streamId].sender,
+            streamDatabase[_streamId].recipient,
+            // streamDatabase[_streamId].tokenAddress,
+            streamDatabase[_streamId].startBlock,
+            streamDatabase[_streamId].stopBlock,
+            streamDatabase[_streamId].payment,
+            streamDatabase[_streamId].balance,
+            streamDatabase[_streamId].withdrawn
+        );
     }
 
     function withdraw(
@@ -140,7 +198,7 @@ contract TokenStream is ITokenStream {
         streamActive(_streamId)
         returns (bool)
     {
-        _updateBalance(_streamId);
+        updateBalance(_streamId);
 
         require(
             msg.sender == streamDatabase[_streamId].recipient, 
@@ -175,7 +233,8 @@ contract TokenStream is ITokenStream {
 
     }
 
-    function _updateBalance(uint256 _streamId) private {
+    /// @dev Updates balance based on current block header
+    function updateBalance(uint256 _streamId) private {
 
         Stream memory stream = streamDatabase[_streamId];
         if (block.number <= stream.startBlock) return;
