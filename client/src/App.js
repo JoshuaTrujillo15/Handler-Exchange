@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { BrowserRouter as Router, Route } from 'react-router-dom'
 
 import Navbar from './screens/components/Navbar'
@@ -10,7 +10,15 @@ import Profile from './screens/Profile'
 import Sidebar from './screens/components/Sidebar'
 import Handlers from './screens/Handlers'
 
+// import EthersTest from './screens/EthersTest'
+// import TimeToken from './screens/TimeToken'
+
+
+
 function App() {
+
+    const [address, setAddress] = useState('')
+
     return (
         <Router>
             <div className='screen'>

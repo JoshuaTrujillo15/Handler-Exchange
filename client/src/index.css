@@ -43,3 +43,16 @@ main {
     transform: translateY(0);
     box-shadow: none;
 }
+
+.testBox {
+    justify-self: center;
+    margin: auto;
+    min-width: 300px;
+    min-height: 300px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+}

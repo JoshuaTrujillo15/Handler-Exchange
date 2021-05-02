@@ -33,25 +33,20 @@ const mockHandlers = [
 ]
 
 const Handlers = () => {
-    const [copiedToClipboard, setCopiedToClipboard] = useState('Copy Handler Address')
+    const [clipboard, setClipboard] = useState('')
 
     const copyHandler = (address) => {
         navigator.clipboard.writeText(address)
-        copiedNotifyHandler()
+        setClipboard(address)
+        setTimeout(() => setClipboard(''), 5000)
     }
-
-    const copiedNotifyHandler = () => {
-        setCopiedToClipboard('Address Copied!')
-        setTimeout(() => setCopiedToClipboard('Copy Handler Address'), 5000)
-    }
-
 
     const handlerList = mockHandlers.map(handler => {
 
         const miniAddress = handler.address.substr(0,32) + '...'
 
         return (
-            <div className='handlers-details'>
+            <div className='handlers-details' key={handler.address}>
                 <h3 className='handlers-username'>{handler.name}</h3>
                 <ul className='handlers-ul'>
                     <li className='handlers-li'>
@@ -78,7 +73,7 @@ const Handlers = () => {
                 <button
                     className='button handlers-copier'
                     onClick={() => copyHandler(handler.address)}
-                >{copiedToClipboard}</button>
+                >{clipboard === handler.address ? 'Copied!': 'Copy to Clipboard'}</button>
             </div>
         )
     })
