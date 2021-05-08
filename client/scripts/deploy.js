@@ -6,11 +6,11 @@ async function main() {
     console.log('Deploying contracts with the account: ', deployer.address)
 
     const HandlerExchange = await hre.ethers.getContractFactory("HandlerExchange")
-    const handlerExchange = await HandlerExchange.deploy("Handler X", "HxT")
+    const handlerExchange = await HandlerExchange.deploy()
 
     await handlerExchange.deployed()
 
-    console.log('Handler Exchange deployed to address: ', handlerExchange.address)
+    console.log('Handler Exchange deployed to: ', handlerExchange.address)
 }
 
 main()

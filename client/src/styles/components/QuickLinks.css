@@ -1,0 +1,21 @@
+.wallet-container {
+    padding: 16px;
+}
+
+.wallet {
+    height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    padding: 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.wallet-data {
+    color: #0A84FF;
+    padding: 4px 0;
+    word-wrap: break-word;
+}

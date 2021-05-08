@@ -23,13 +23,21 @@ const BusinessCard = (props) => {
 
     return (
         <div className='business-card-container'>
-            <div className='business-card'>
-                <div className='business-card-name'>
+            <div
+                className='business-card'
+                style={{
+                    backgroundColor: data.primary,
+                    color: data.text
+                }}
+            >
+                <div
+                    className='business-card-name'
+                    style={{borderBottom: `4px solid ${data.secondary}`}}
+                >
                     <h2>{data.personalName}</h2>
                 </div>
                 <div className='business-card-group'>
                     <h3>{data.personalTitle}</h3>
-                    <h3>at {data.businessName}</h3>
                     <p>{data.emailAddress}</p>
                 </div>
                 <div className='business-card-group address'>
@@ -39,7 +47,10 @@ const BusinessCard = (props) => {
                     >
                         <img src={Clipboard} alt='copy to clipboard' className='clipboard-mini' />
                     </div>
-                    <h4 className='business-card-info'>{miniAddress}</h4>
+                    <h4
+                        className='business-card-info'
+                        style={{textDecoration: `underline solid ${data.secondary}} 2px`}}
+                    >{miniAddress}</h4>
                     <p className='business-card-copy-message'>{copiedToClipboard}</p>
                 </div>
             </div>

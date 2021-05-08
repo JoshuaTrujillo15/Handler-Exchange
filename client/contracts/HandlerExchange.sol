@@ -2,60 +2,19 @@
 pragma solidity ^0.8.4;
 
 import "./interfaces/IHandlerExchange.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "./HandlerXToken.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract HandlerExchange is IHandlerExchange, ERC20 {
+contract HandlerExchange is IHandlerExchange {
 
-    modifier gigExists(uint256 _gigId) {
-        require(gigDatabase.length > _gigId, "gig does not exist");
-        _;
-    }
+    IERC20 private _token;
 
-    modifier onlyClient(uint256 _gigId, address _account) {
-        require(
-            gigDatabase[_gigId].client == _account,
-            "only the client can perform this action"
-        );
-        _;
-    }
-
-    modifier onlyContractor(uint256 _gigId, address _account) {
-        require(
-            gigDatabase[_gigId].contractor == _account,
-            "only the contractor can perform this action"
-        );
-        _;
-    }
-
-    modifier onlyClientOrContractor(uint256 _gigId, address _account) {
-        require(
-            gigDatabase[_gigId].contractor == _account ||
-            gigDatabase[_gigId].client == _account,
-            "only the client or contractor may perform this action"
-        );
-        _;
-    }
-
-    modifier onlyHandler(uint256 _gigId, address _account) {
-        require(
-            gigDatabase[_gigId].handler == _account,
-            "only the handler may perform this action"
-        );
-        _;
-    }
-
-    modifier handlerActive(address _account) {
-        require(handlers[_account].fee > 0, "inactive handler");
-        _;
-    }
-
-    address owner;
     GigStruct[] gigDatabase;
     OfferStruct[] offerDatabase;
-    mapping(address => HandlerStruct) handlers;
+    HandlerStruct[] handlerDatabase;
 
-    constructor(string memory name, string memory symbol) ERC20(name, symbol) {
-        _mint(msg.sender, 100000 * (10 ** 18));
+    constructor() {
+        _token = new HandlerXToken();
     }
 
     function createOffer(
@@ -91,31 +50,52 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
         return true;
     }
 
+    function getOffer(uint256 _offerId)
+        public
+        view
+        override
+        returns (OfferStruct memory)
+    {
+        require(offerDatabase.length > _offerId);
+        return offerDatabase[_offerId];
+    }
+
+    function getOfferBatch()
+        public
+        view
+        override
+        returns (OfferStruct[] memory)
+    {
+        return offerDatabase;
+    }
+
     function createGig(
         address _client,
-        address _handler,
+        uint256 _handlerId,
         uint256 _price,
         uint8 _initialRelease
     )
         public
         override
-        handlerActive(_handler)
         returns (bool)
     {
+        require(handlerExists(_handlerId));
+        HandlerStruct memory handler = handlerDatabase[_handlerId];
+
+        require(handler.fee > 0, "inactive handler");
         require(_price > 0, "price is zero");
-        require(_initialRelease < 100, "initial release is not 0% to 99%");
+        require(_initialRelease < 100, "only 0% to 99%");
         require(_client != address(0x00), "client is zero address");
-        require(_client != address(this), "client is this contract");
-        require(_handler != address(0x00), "handler is zero address");
-        require(_handler != address(this), "handler is this contract");
-        require(_handler != msg.sender, "handler is contractor");
+        require(_client != address(this), "client is contract");
+        require(handler.account != address(0x00), "handler is zero address");
+        require(handler.account != address(this), "handler is contract");
+        require(handler.account != msg.sender, "handler is contractor");
 
         GigStruct memory gig;
         gig.contractor = msg.sender;
         gig.client = _client;
-        gig.handler = _handler;
+        gig.handler = handler;
         gig.price = _price;
-        gig.handlerFee = getHandler(_handler).fee;
         gig.initialRelease = _initialRelease;
         gig.active = false;
         gig.cancelled = false;
@@ -128,38 +108,40 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
             gigDatabase.length - 1,
             msg.sender,
             _client,
-            _handler,
+            handler,
             _price,
-            gig.handlerFee,
             _initialRelease
         );
 
         return true;
     }
 
+    // client MUST HandlerXToken.approve(gig.handler.account, totalCost);
     function acceptGig(uint256 _gigId)
         public
         override
-        gigExists(_gigId)
-        onlyClient(_gigId, msg.sender)
         returns (bool accepted)
     {
+        require(gigDatabase.length > _gigId);
         GigStruct memory gig = gigDatabase[_gigId];
+        require(gig.client == msg.sender, "only client");
 
-        require(!gig.active, "gig is already active");
-        require(gig.cancelled, "gig is cancelled");
-        require(gig.refunded, "gig is refunded");
-        require(gig.complete, "gig is complete");
+        require(!gig.active, "gig active");
+        require(gig.cancelled, "gig cancelled");
+        require(gig.refunded, "gig refunded");
+        require(gig.complete, "gig complete");
 
-        uint256 clientAllowance = allowance(msg.sender, gig.handler);
-        uint256 totalCost = gig.price + gig.handlerFee;
+        uint256 clientAllowance = _token.allowance(msg.sender, gig.handler.account);
+        uint256 totalCost = gig.price + ((gig.handler.fee * gig.price) / 1000);
+        require(
+            clientAllowance >= totalCost,
+            "client allowance insufficient"
+        );
 
-        require(clientAllowance >= totalCost, "insufficient allowance");
-
-        accepted = transferFrom(msg.sender, gig.handler, totalCost);
+        accepted = _token.transferFrom(msg.sender, gig.handler.account, totalCost);
         gigDatabase[_gigId].active = true;
 
-        emit LogAcceptGig(_gigId, gig.handler);
+        emit LogAcceptGig(_gigId);
 
         return accepted;
     }
@@ -167,19 +149,23 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
     function cancelGig(uint256 _gigId)
         public
         override
-        gigExists(_gigId)
-        onlyClientOrContractor(_gigId, msg.sender)
         returns (bool)
     {
+        require(gigDatabase.length > _gigId);
         GigStruct memory gig = gigDatabase[_gigId];
-        require(gig.active, "gig is inactive");
-        require(!gig.cancelled, "gig is cancelled");
-        require(!gig.refunded, "gig is refunded");
-        require(!gig.complete, "gig is complete");
+        require(
+            gig.contractor == msg.sender ||
+            gig.client == msg.sender,
+            "only client or contractor "
+        );
+        require(gig.active, "gig inactive");
+        require(!gig.cancelled, "gig cancelled");
+        require(!gig.refunded, "gig refunded");
+        require(!gig.complete, "gig complete");
 
         gigDatabase[_gigId].cancelled = true;
 
-        emit LogCancelGig(_gigId, gig.handler);
+        emit LogCancelGig(_gigId);
 
         return true;
     }
@@ -187,19 +173,19 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
     function gigComplete(uint256 _gigId)
         public
         override
-        gigExists(_gigId)
-        onlyClient(_gigId, msg.sender)
         returns (bool)
     {
+        require(gigDatabase.length > _gigId);
         GigStruct memory gig = gigDatabase[_gigId];
-        require(gig.active, "gig is inactive");
-        require(!gig.cancelled, "gig is cancelled");
-        require(!gig.refunded, "gig is refunded");
-        require(!gig.complete, "gig is complete");
+        require(gig.client == msg.sender, "only client");
+        require(gig.active, "gig inactive");
+        require(!gig.cancelled, "gig cancelled");
+        require(!gig.refunded, "gig refunded");
+        require(!gig.complete, "gig complete");
 
         gigDatabase[_gigId].complete = true;
         
-        emit LogCompleteGig(_gigId, gig.handler);
+        emit LogCompleteGig(_gigId);
 
         return true;
     }
@@ -208,107 +194,131 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
         public
         view
         override
-        gigExists(_gigId)
-        returns (
-        address contractor,
-        address client,
-        address handler,
-        uint256 price,
-        uint256 handlerFee,
-        uint8 initialRelease,
-        bool active,
-        bool cancelled,
-        bool refunded,
-        bool complete
-    ) {
-        require(gigDatabase.length > _gigId, "gig does not exist");
-        GigStruct memory gig = gigDatabase[_gigId];
-        return (
-            gig.contractor,
-            gig.client,
-            gig.handler,
-            gig.price,
-            gig.handlerFee,
-            gig.initialRelease,
-            gig.active,
-            gig.cancelled,
-            gig.refunded,
-            gig.complete
+        returns (GigStruct memory)
+    {
+        require(gigDatabase.length > _gigId);
+        return gigDatabase[_gigId];
+    }
+
+    function getGigBatch()
+        public
+        view
+        override
+        returns (GigStruct[] memory)
+    {
+        return gigDatabase;
+    }
+
+    function registerHandler(uint256 _fee)
+        public
+        override
+        returns (bool)
+    {
+        require(_fee > 0 && _fee < 100, "invalid fee");
+
+        HandlerStruct memory handler;
+        handler.account = msg.sender;
+        handler.fee = _fee;
+        handler.issues = 0;
+        handler.transactions = 0;
+
+        handlerDatabase.push(handler);
+
+        emit LogRegisterHandler(msg.sender, handlerDatabase.length, _fee);
+
+        return true;
+    }
+
+    function deactivateHandler(uint256 _handlerId)
+        public
+        override
+        returns (bool)
+    {
+        require(handlerExists(_handlerId));
+        require(
+            handlerDatabase[_handlerId].account == msg.sender,
+            "only handler"
         );
-    }
-
-    function activateHandler(uint256 _fee)
-        public
-        override
-        returns (bool activated)
-    {
-        activated = setHandlerFee(_fee);
-        return activated;
-    }
-
-    function deactivateHandler()
-        public
-        override
-        handlerActive(msg.sender)
-        returns (bool)
-    {
-        handlers[msg.sender].fee = 0;
+        handlerDatabase[_handlerId].fee = 0;
         return true;
     }
 
-    function setHandlerFee(uint256 _fee)
+    function setHandlerFee(uint256 _handlerId, uint256 _fee)
         public
         override
         returns (bool)
     {
-        require(_fee > 0, "fee cannot be zero");
-        handlers[msg.sender].fee = _fee;
+        require(_fee > 0, "fee is zero");
+        require(_fee < 100, "fee is greater than 10% (100)");
+        require(handlerExists(_handlerId));
+        require(
+            handlerDatabase[_handlerId].account == msg.sender,
+            "only handler"
+        );
+        handlerDatabase[_handlerId].fee = _fee;
         return true;
     }
 
-    function getHandler(address _handler)
+    function getHandler(uint256 _handlerId)
         public
         view
         override
         returns (HandlerStruct memory handler)
     {
-        handler = handlers[_handler];
-        return handler;
+        require(handlerExists(_handlerId));
+        return handlerDatabase[_handlerId];
     }
 
-    function reportHandler(address _handler)
+    function getHandlerBatch()
+        public
+        view
+        override
+        returns (HandlerStruct[] memory)
+    {
+        return handlerDatabase;
+    }
+
+    function reportHandler(uint256 _handlerId)
         public
         override
-        handlerActive(_handler)
         returns (bool)
     {
-        require(msg.sender != _handler, "sender is the handler");
-        handlers[_handler].issues += 1;
+        require(handlerExists(_handlerId));
+        handlerDatabase[_handlerId].issues += 1;
         return true;
     }
 
+    function handlerExists(uint256 _handlerId)
+        public
+        view
+        override
+        returns (bool)
+    {
+        return handlerDatabase.length > _handlerId;
+    }
+
+    // handler MUST call HandlerXToken.approve(gig.contractor, totalCost)
     function releaseInitial(uint256 _gigId)
         public
         override
-        gigExists(_gigId)
-        onlyHandler(_gigId, msg.sender)
         returns (bool released)
     {
+        require(gigDatabase.length > _gigId);
         GigStruct memory gig = gigDatabase[_gigId];
-        require(gig.active, "gig is inactive");
-        require(!gig.cancelled, "gig is cancelled");
-        require(!gig.refunded, "gig is refunded");
-        require(!gig.complete, "gig is complete");
+        require(gig.handler.account == msg.sender, "only handler");
+        require(gig.active, "gig inactive");
+        require(!gig.cancelled, "gig cancelled");
+        require(!gig.refunded, "gig refunded");
+        require(!gig.complete, "gig complete");
 
-        uint256 handlerAllowance = allowance(msg.sender, gig.contractor);
+        uint256 handlerAllowance = _token.allowance(msg.sender, gig.contractor);
         uint256 initialPayment = (gig.price * gig.initialRelease) / 100;
-
         require(
             handlerAllowance >= initialPayment,
             "handler allowance insufficient"
         );
 
-        released = transferFrom(msg.sender, gig.contractor, initialPayment);
+        released = _token.transferFrom(msg.sender, gig.contractor, initialPayment);
 
         return released;
     }
@@ -316,17 +326,17 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
     function releaseFinal(uint256 _gigId)
         public
         override
-        gigExists(_gigId)
-        onlyHandler(_gigId, msg.sender)
         returns (bool released)
     {
+        require(gigDatabase.length > _gigId);
         GigStruct memory gig = gigDatabase[_gigId];
-        require(gig.active, "gig is inactive");
-        require(!gig.cancelled, "gig is cancelled");
-        require(!gig.refunded, "gig is refunded");
-        require(gig.complete, "gig is not complete");
+        require(gig.handler.account == msg.sender, "only handler");
+        require(gig.active, "gig inactive");
+        require(!gig.cancelled, "gig cancelled");
+        require(!gig.refunded, "gig refunded");
+        require(gig.complete, "gig not complete");
 
-        uint256 handlerAllowance = allowance(msg.sender, gig.contractor);
+        uint256 handlerAllowance = _token.allowance(msg.sender, gig.contractor);
         uint256 finalPayment = (gig.price * (100 - gig.initialRelease)) / 100;
 
         require(
@@ -334,10 +344,9 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
             "handler allowance insufficient"
         );
 
-        released = transferFrom(msg.sender, gig.contractor, finalPayment);
+        released = _token.transferFrom(msg.sender, gig.contractor, finalPayment);
 
         gigDatabase[_gigId].active = false;
-        gigDatabase[_gigId].complete = true;
 
         return released;
     }
@@ -345,17 +354,17 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
     function refundFinal(uint256 _gigId)
         public
         override
-        gigExists(_gigId)
-        onlyHandler(_gigId, msg.sender)
         returns (bool refunded)
     {
+        require(gigDatabase.length > _gigId);
+        require(gigDatabase[_gigId].handler.account == msg.sender, "only handler");
         GigStruct memory gig = gigDatabase[_gigId];
-        require(gig.active, "gig is inactive");
-        require(gig.cancelled, "gig is cancelled");
-        require(!gig.refunded, "gig is refunded");
-        require(!gig.complete, "gig is complete");
+        require(gig.active, "gig inactive");
+        require(gig.cancelled, "gig cancelled");
+        require(!gig.refunded, "gig refunded");
+        require(!gig.complete, "gig complete");
 
-        uint256 handlerAllowance = allowance(msg.sender, gig.contractor);
+        uint256 handlerAllowance = _token.allowance(msg.sender, gig.contractor);
         uint256 refundPayment = (gig.price * (100 - gig.initialRelease)) / 100;
 
         require(
@@ -363,7 +372,7 @@ contract HandlerExchange is IHandlerExchange, ERC20 {
             "handler allowance insufficient"
         );
 
-        refunded = transferFrom(msg.sender, gig.contractor, refundPayment);
+        refunded = _token.transferFrom(msg.sender, gig.contractor, refundPayment);
 
         gigDatabase[_gigId].refunded = true;
 

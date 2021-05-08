@@ -7,7 +7,7 @@
     align-items: center;
     box-shadow: 0 0 8px #000;
     z-index: 2;
-    background: #0a84ff;
+    background: linear-gradient(225deg, #02B2E8, #0239E8);
 }
 
 .navbar-brand {

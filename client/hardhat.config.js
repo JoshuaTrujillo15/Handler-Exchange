@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require("hardhat-contract-sizer")
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -22,8 +23,24 @@ module.exports = {
         artifacts: './src/artifacts'
     },
     networks: {
-        hardhat: {
-            chainId: 1337
-        }
+      arbitrum: {
+        url: 'https://kovan4.arbitrum.io/rpc',
+        gasPrice: 0
+      }
+        // hardhat: {
+        //     chainId: 1337
+        // }
     }
 }
+
+/*
+module.exports = {
+  solidity: '0.7.3',
+  networks: {
+    arbitrum: {
+      url: 'https://kovan4.arbitrum.io/rpc',
+      gasPrice: 0,
+    },
+  },
+}
+*/

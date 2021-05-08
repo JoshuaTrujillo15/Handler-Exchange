@@ -1,25 +1,10 @@
-import React, { useState } from 'react'
-import { ethers } from 'ethers'
+import React from 'react'
 
 import '../../styles/components/Wallet.css'
 
-const Wallet = () => {
-    const [account, setAccount] = useState('')
-
-    const requestAccount = async () => {
-        await window.ethereum.request({ method: 'eth_requestAccounts' })
-        console.log('access granted')
-    }
-
-    const getAddress = async () => {
-        if (typeof window.ethereum !== 'undefined') {
-            await requestAccount()
-            const provider = new ethers.providers.Web3Provider(window.ethereum)
-            const signer = provider.getSigner()
-            const address = await signer.getAddress()
-            setAccount(address)
-        }
-    }
+const Wallet = props => {
+    const account = props.account
+    const getAddress = props.getAddress
 
     const status = account === '' ? '🔴 Not Connected' : '🟢 Connected'
     let miniAddress = ''
@@ -31,6 +16,7 @@ const Wallet = () => {
     return (
         <div className='wallet-container'>
             <div className='wallet'>
+                <h3>Wallet</h3>
                 <div>
                     <p>Status:</p>
                     <p>{status}</p>

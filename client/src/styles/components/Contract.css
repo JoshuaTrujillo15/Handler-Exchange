@@ -8,8 +8,10 @@
     border: 1px solid #ddd;
     display: flex;
     flex-direction: column;
+    justify-content: space-evenly;
     border-radius: 4px;
     transition: box-shadow 0.2s, transform 0.2s;
+    line-height: 2em;
 }
 
 .contract:hover {
@@ -19,12 +21,11 @@
 
 .contract-info {
     flex: 1;
-    line-height: 2em;
 }
 
 
 @media (min-width: 1200px) {
-    .contract {
+    .market-contract-list .contract {
         width: calc((100% / 3) - 8px);
     }
 }

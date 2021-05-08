@@ -12,7 +12,6 @@
     background: #303030;
     width: 450px;
     min-width: 300px;
-    color: #fff;
     padding: 8px;
     box-sizing: border-box;
     border-radius: 4px;
@@ -20,7 +19,6 @@
 }
 
 .business-card-name {
-    border-bottom: 4px solid #0a84ff;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -43,7 +41,6 @@
 }
 
 .business-card-info {
-    text-decoration: underline solid #0a84ff 2px;
     line-height: 2em;
     flex: 1;
     text-align: center;

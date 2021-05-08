@@ -1,0 +1,82 @@
+.newoffer-container {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 48px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.newoffer {
+    width: 75%;
+    min-width: 350px;
+    max-width: 750px;
+    padding: 8px;
+    box-sizing: border-box;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 2px 2px 2px rgba(0,0,0,0.2);
+    word-wrap: break-word;
+}
+
+.newoffer-header {
+    padding-bottom: 8px;
+    border-bottom: 2px solid #888;
+}
+
+.newoffer-form {
+    padding: 24px 0;
+}
+
+.newoffer-form-group {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 24px;
+}
+
+.newoffer-form-group.colors {
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.newoffer-input {
+    padding: 4px;
+    border-radius: 4px;
+    border: 1px solid #888;
+    margin: 4px 0;
+}
+
+.newoffer-input.color {
+    width: 64px;
+    height: 48px;
+    box-sizing: border-box;
+}
+
+.newoffer-input-group {
+    display: flex;
+    align-items: center;
+}
+
+.newoffer-input.number {
+    margin-right: 2px;
+    text-align: right;
+}
+
+.newoffer-input:focus {
+    outline: none;
+    border: 1px solid #0a84ff;
+}
+
+.newoffer-error {
+    color: #FF3224;
+}
+
+.newoffer-input::-webkit-outer-spin-button,
+.newoffer-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.newoffer-input[type=number] {
+  -moz-appearance: textfield;
+}

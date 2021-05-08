@@ -6,14 +6,14 @@ import '../styles/ContractDetails.css'
 
 const mockData = {
     address: '0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266',
-    id: '0xe7f1725e7734ce288f8367e1bb143e90bb3f0512',
     personalName: 'Joshua Trujillo',
-    personalTitle: 'Lead Designer',
+    personalTitle: 'UI Designer',
     businessName: 'Byte-Speak',
     emailAddress: 'example@example.com',
-    price: 1000,
-    priceDenomination: 'GWEI',
-    service: 'Build a React Web Application!'
+    service: 'Build a React Web Application!',
+    primary: '#303030',
+    secondary: '#0a84ff',
+    text: '#FFFFFF'
 }
 
 const ContractDetails = () => {
@@ -27,14 +27,10 @@ const ContractDetails = () => {
 
                 <BusinessCard data={mockData} />
 
-                <h3 className='contract-details-subheader'>Pricing Data</h3>
+                <h3 className='contract-details-subheader'>Service Data</h3>
                 <div className='contract-details-group'>
                     <h4>Service:</h4>
                     <p>I will {mockData.service}</p>
-                </div>
-                <div className='contract-details-group'>
-                    <h4>Pricing:</h4>
-                    <p>{mockData.price} - {mockData.priceDenomination}</p>
                 </div>
 
                 <h3 className='contract-details-subheader'>Personal Info</h3>
@@ -44,7 +40,7 @@ const ContractDetails = () => {
                 </div>
                 <div className='contract-details-group'>
                     <h4>Title:</h4>
-                    <p>{mockData.personalTitle} at {mockData.businessName}</p>
+                    <p>{mockData.personalTitle}</p>
                 </div>
                 <div className='contract-details-group'>
                     <h4>Email:</h4>
@@ -53,15 +49,8 @@ const ContractDetails = () => {
 
                 <h3 className='contract-details-subheader'>Blockchain Data</h3>
                 <div className='contract-details-group'>
-                    <h4>Contract ID:</h4>
-                    <p>{mockData.id}</p>
-                </div>
-                <div className='contract-details-group'>
                     <h4>Contractor Address:</h4>
                     <p>{mockData.address}</p>
-                </div>
-                <div className='contract-details-group'>
-                    <button className='button'>Open Contract</button>
                 </div>
             </div>
         </div>

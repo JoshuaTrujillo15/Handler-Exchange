@@ -9,9 +9,8 @@ interface IHandlerExchange {
     struct GigStruct {
         address contractor;
         address client;
-        address handler;
+        HandlerStruct handler;
         uint256 price;
-        uint256 handlerFee;
         uint8 initialRelease;
         bool active;
         bool cancelled;
@@ -31,6 +30,7 @@ interface IHandlerExchange {
     }
 
     struct HandlerStruct {
+        address account;
         uint256 fee;
         uint256 transactions;
         uint256 issues;
@@ -49,25 +49,21 @@ interface IHandlerExchange {
         uint256 indexed gigId,
         address indexed contractor,
         address indexed client,
-        address handler,
+        HandlerStruct handler,
         uint256 price,
-        uint256 handlerFee,
         uint8 initialRelease
     );
 
-    event LogAcceptGig(
-        uint256 indexed gigId,
-        address indexed handler
-    );
+    event LogAcceptGig(uint256 indexed gigId);
 
-    event LogCancelGig(
-        uint256 indexed gigId,
-        address indexed handler
-    );
+    event LogCancelGig(uint256 indexed gigId);
 
-    event LogCompleteGig(
-        uint256 indexed gigIg,
-        address indexed handler
+    event LogCompleteGig(uint256 indexed gigIg);
+
+    event LogRegisterHandler(
+        address account,
+        uint256 id,
+        uint256 fee
     );
 
     function createOffer(
@@ -79,9 +75,13 @@ interface IHandlerExchange {
         bytes4 _secondaryColor
     ) external returns (bool success);
 
+    function getOffer(uint256 _offerId) external returns (OfferStruct memory);
+
+    function getOfferBatch() external returns (OfferStruct[] memory);
+
     function createGig(
         address _client,
-        address _handler,
+        uint256 _handlerId,
         uint256 _price,
         uint8 _initialRelease
     ) external returns (bool success);
@@ -95,31 +95,32 @@ interface IHandlerExchange {
     function getGig(uint256 _gigId)
         external
         view
-        returns (
-            address contractor,
-            address client,
-            address handler,
-            uint256 price,
-            uint256 handlerFee,
-            uint8 initialRelease,
-            bool active,
-            bool cancelled,
-            bool refunded,
-            bool complete
-        );
+        returns (GigStruct memory);
+    
+    function getGigBatch()
+        external
+        view
+        returns (GigStruct[] memory);
 
-    function activateHandler(uint256 _fee) external returns (bool activated);
+    function registerHandler(uint256 _fee) external returns (bool activated);
 
-    function deactivateHandler() external returns (bool deactivated);
+    function deactivateHandler(uint256 _handlerId) external returns (bool deactivated);
 
-    function setHandlerFee(uint256 _fee) external returns (bool set);
+    function setHandlerFee(uint256 _handlerId, uint256 _fee) external returns (bool set);
 
-    function getHandler(address _handler)
+    function getHandler(uint256 _handlerId)
         external
         view
         returns (HandlerStruct memory);
 
-    function reportHandler(address _handler) external returns (bool reported);
+    function getHandlerBatch()
+        external
+        view
+        returns (HandlerStruct[] memory);
+
+    function reportHandler(uint256 _handlerId) external returns (bool reported);
+
+    function handlerExists(uint256 _handlerId) external returns (bool exists);
 
     function releaseInitial(uint256 _gigId) external returns (bool released);
 
